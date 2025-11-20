@@ -1,0 +1,4 @@
+name,cluster,owner_slug,os_type
+acc-db-01,linux-cluster-prod,finance-apps,rhel
+web-server-01,linux-cluster-prod,web-dev,ubuntu
+win-server-01,linux-cluster-prod,windows-ops,windows

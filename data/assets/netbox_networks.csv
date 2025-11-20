@@ -1,0 +1,3 @@
+name,vlan_id,has_internet_access
+dmz-prod,101,true
+internal-prod,201,false

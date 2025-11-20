@@ -1,0 +1,4 @@
+name,assigned_to_vm,network_name
+10.0.1.55,acc-db-01,dmz-prod
+192.168.10.20,web-server-01,internal-prod
+10.0.1.56,win-server-01,dmz-prod

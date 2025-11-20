@@ -1,0 +1,51 @@
+audit_id = "CORP-PLACEMENT-POLICY-V1"
+audit_name = "Corporate VM Placement Policy"
+
+# Rule 1: Finance servers must not have direct internet access.
+[[control]]
+id = "FIN-SEC-01"
+name = "No Internet Access for Finance Systems"
+
+[[control.target]]
+origin_resource_type = "server"
+match_on = [
+  { property = "business_unit", value = "Finance" },
+  { property = "has_internet_access", value = true }
+]
+[control.target.resource]
+type = "placement_violation"
+name = "violation-internet-{{ origin_resource.name }}"
+[control.target.resource.properties]
+policy_id = "FIN-SEC-01"
+summary = "Finance server has prohibited internet access."
+server_name = "{{ origin_resource.name }}"
+violating_property = "has_internet_access"
+violating_value = "{{ origin_resource.has_internet_access }}"
+
+[control.target.relation]
+type = "HAS_VIOLATION"
+
+
+# Rule 2: Windows servers must be deployed to the dedicated Windows cluster.
+[[control]]
+id = "WIN-POLICY-04"
+name = "Windows Cluster Placement"
+
+[[control.target]]
+origin_resource_type = "server"
+match_on = [
+  { property = "os_type", value = "windows" },
+  { property = "cluster", not = "windows-cluster-prod" }
+]
+[control.target.resource]
+type = "placement_violation"
+name = "violation-cluster-{{ origin_resource.name }}"
+[control.target.resource.properties]
+policy_id = "WIN-POLICY-04"
+summary = "Windows server is on a non-approved cluster."
+server_name = "{{ origin_resource.name }}"
+violating_property = "cluster"
+violating_value = "{{ origin_resource.cluster }}"
+
+[control.target.relation]
+type = "HAS_VIOLATION"
