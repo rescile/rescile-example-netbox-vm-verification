@@ -102,7 +102,7 @@ windows-ops,Windows Operations,IT
 
 #### 2. Architectural Model (`data/models/netbox_infra.toml`)
 
-This model file builds our infrastructure graph in layers, propagating necessary data between the layers.
+This model file builds our infrastructure graph in layers, propagating necessary data between the layers. It uses a robust, multi-step process to ensure data is correctly joined and enriched.
 
 ```toml
 # --- Chunk 1: Create 'server' resources from NetBox VMs ---
@@ -117,39 +117,33 @@ cluster = "{{ origin_resource.cluster }}"
 os_type = "{{ origin_resource.os_type }}"
 owner_slug = "{{ origin_resource.owner_slug }}"
 
-# --- Chunks 2, 3, 4: Enrich 'server' with team data, IP, and network info ---
+# --- Chunk 2: Enrich IP addresses with network information ---
+# This step pre-populates all 'netbox_ips' resources with the 'has_internet_access'
+# flag from the corresponding 'netbox_networks' resource. This makes the data
+# readily available for the next step.
+origin_resource = "netbox_ips"
+
+[[link_resources]]
+with = "netbox_networks"
+on = { local = "network_name", remote = "name" }
+copy_properties = [ "has_internet_access" ]
+
+# --- Chunk 3: Enrich 'server' resources with team and final network info ---
 origin_resource = "server"
 
-# --- Link 'server' with 'teams' to copy the business_unit ---
+# Link 'server' with 'teams' to copy the business_unit
 [[link_resources]]
 with = "teams"
 on = { local = "owner_slug", remote = "slug" }
 copy_properties = [ "business_unit" ]
 
-# --- Link 'server' to its 'ip_address' ---
-# This finds the ip_address whose `assigned_to_vm` property matches the server's name
-# and creates a HAS_IP link from the server to the IP address.
+# Link 'server' to its IP and copy up the pre-enriched network info
+# This creates the HAS_IP link and copies `has_internet_access` from the
+# `netbox_ips` resource in a single, reliable step.
 [[link_resources]]
 with = "netbox_ips"
 on = { local = "name", remote = "assigned_to_vm" }
 create_relation = { type = "HAS_IP" }
-
-# --- Propagate network info up to the 'server' resource ---
-# This powerful two-step operation first "pulls" a property from a related node,
-# then uses that property to join with a third node.
-
-# Step 1: Join with the connected 'netbox_ips' node to copy its 'network_name' property.
-# This effectively "pulls" the property from the child to the parent.
-[[link_resources]]
-with = "netbox_ips"
-on = { local = "name", remote = "assigned_to_vm" }
-copy_properties = [ "network_name" ]
-
-# Step 2: Use the newly acquired 'network_name' to join with 'netbox_networks'
-# and copy the 'has_internet_access' property.
-[[link_resources]]
-with = "netbox_networks"
-on = { local = "network_name", remote = "name" }
 copy_properties = [ "has_internet_access" ]
 ```
 
